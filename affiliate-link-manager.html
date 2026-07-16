@@ -91,6 +91,16 @@
 <main>
 
   <div class="panel">
+    <h2>ตั้งค่าการเชื่อมต่อ <span class="tag" id="apiStatusTag">ยังไม่ใส่ Claude API Key</span></h2>
+    <span class="settings-toggle" id="settingsToggle" style="cursor:pointer; color:var(--muted); font-size:12px; text-decoration:underline; margin-bottom:12px; display:inline-block;">แสดง/ซ่อนการตั้งค่า</span>
+    <div id="apiSettings" style="display:none;">
+      <label>Claude API Key — ใช้สร้างแคปชัน (จาก console.anthropic.com)</label>
+      <input type="text" id="claude_apikey" placeholder="sk-ant-...">
+      <button type="button" class="btn-ghost" id="saveApiBtn" style="margin-top:10px;">บันทึกการตั้งค่า</button>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>นำเข้าจาก Video Generator <span class="tag">JSON import</span></h2>
     <div class="import-row">
       <textarea id="importBox" placeholder='วาง JSON ที่ก็อปจากปุ่ม "ส่งออกไป Affiliate Link Manager" ในหน้า Video Generator ที่นี่'></textarea>
@@ -112,6 +122,38 @@
 <script>
 let items = [];
 const ITEMS_KEY = 'affiliate-link-items';
+const API_KEY_STORAGE = 'affiliate-link-manager-api-config';
+
+async function loadApiConfig(){
+  try{
+    const res = await window.storage.get(API_KEY_STORAGE);
+    if(res){
+      const cfg = JSON.parse(res.value);
+      document.getElementById('claude_apikey').value = cfg.claudeApiKey || '';
+      updateApiStatusTag(cfg.claudeApiKey);
+    }
+  }catch(e){}
+}
+function updateApiStatusTag(key){
+  const tag = document.getElementById('apiStatusTag');
+  if(key){
+    tag.textContent = 'ใส่ Claude API Key แล้ว';
+    tag.style.color = 'var(--mint)';
+  } else {
+    tag.textContent = 'ยังไม่ใส่ Claude API Key';
+    tag.style.color = 'var(--muted)';
+  }
+}
+document.getElementById('settingsToggle').addEventListener('click', ()=>{
+  const panel = document.getElementById('apiSettings');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('saveApiBtn').addEventListener('click', async ()=>{
+  const claudeApiKey = document.getElementById('claude_apikey').value.trim();
+  await window.storage.set(API_KEY_STORAGE, JSON.stringify({claudeApiKey}));
+  updateApiStatusTag(claudeApiKey);
+  alert('บันทึกการตั้งค่าแล้ว');
+});
 
 const BEST_TIMES = {
   tiktok: 'ช่วง 19:00-21:00 หรือ 12:00-13:00 (พฤ-อา ยอดเข้าถึงสูงสุด)',
@@ -268,16 +310,37 @@ ${it.script ? `บริบทจากสคริปต์วิดีโอ: 
 2. แฮชแท็กที่เกี่ยวข้อง 5-8 คำ ขึ้นต้นด้วย #
 ตอบเฉพาะเนื้อหา ไม่ต้องมีคำอธิบายเพิ่ม`;
 
+  let cfg = {};
+  try{
+    const res = await window.storage.get(API_KEY_STORAGE);
+    if(res) cfg = JSON.parse(res.value);
+  }catch(e){}
+
+  if(!cfg.claudeApiKey){
+    alert('ยังไม่ได้ใส่ Claude API Key — ไปตั้งค่าด้านบนก่อน (เอาจาก console.anthropic.com)');
+    if(btn){ btn.disabled = false; btn.textContent = '✎ สร้างแคปชันด้วย AI'; }
+    return;
+  }
+
   try{
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": cfg.claudeApiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 400,
         messages: [{ role: "user", content: prompt_text }]
       })
     });
+    if(!response.ok){
+      const errBody = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errBody.slice(0,150)}`);
+    }
     const data = await response.json();
     const textBlock = (data.content || []).find(b => b.type === 'text');
     const caption = textBlock ? textBlock.text.trim() : '';
@@ -306,6 +369,7 @@ document.getElementById('exportPostedBtn').addEventListener('click', async ()=>{
   }
 });
 
+loadApiConfig();
 loadItems();
 </script>
 
