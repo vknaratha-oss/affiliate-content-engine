@@ -1,7 +1,772 @@
 <!DOCTYPE html>
 <html lang="th"><!DOCTYPE html>
 <html lang="th">
+<head><!DOCTYPE html>
+<html lang="th">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trend Scanner — Product Queue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1115;
+    --surface:#171A21;
+    --surface-2:#1E222B;
+    --border:#2A2F3A;
+    --text:#EDEFF4;
+    --muted:#8891A5;
+    --gold:#E8A33D;
+    --coral:#FF6B5B;
+    --mint:#3DDC97;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Sora',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  header{
+    padding:28px 24px 20px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#151822 0%, #0F1115 100%);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:6px;
+  }
+  h1{
+    margin:0;
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+  }
+  .sub{color:var(--muted); font-size:13px; margin-top:6px;}
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:10px;
+    padding:18px 24px;
+    max-width:1100px;
+    margin:0 auto;
+  }
+  .stat{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .stat .num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600;}
+  .stat .label{font-size:11px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:0.06em;}
+  .stat.gold .num{color:var(--gold);}
+  .stat.coral .num{color:var(--coral);}
+  .stat.mint .num{color:var(--mint);}
+
+  main{max-width:1100px; margin:0 auto; padding:0 24px 60px;}
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .panel h2{
+    font-size:15px;
+    margin:0 0 14px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel h2 .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    border:1px solid var(--border);
+    padding:2px 6px;
+    border-radius:5px;
+  }
+
+  form.add-form{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:10px;
+  }
+  form.add-form .full{grid-column:1/-1;}
+  label{font-size:11px; color:var(--muted); display:block; margin-bottom:4px;}
+  input,select{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:7px;
+    padding:8px 10px;
+    font-size:13px;
+    font-family:'Sora',sans-serif;
+  }
+  input:focus,select:focus{outline:none; border-color:var(--gold);}
+  button{
+    cursor:pointer;
+    border:none;
+    border-radius:7px;
+    font-family:'Sora',sans-serif;
+    font-weight:600;
+    font-size:13px;
+  }
+  .btn-primary{
+    background:var(--gold);
+    color:#1A1300;
+    padding:10px 18px;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    padding:6px 12px;
+  }
+  .btn-ghost:hover{color:var(--text); border-color:var(--muted);}
+
+  .tabs{display:flex; gap:6px; margin-bottom:16px;}
+  .tab{
+    padding:7px 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--muted);
+    font-size:12px;
+    cursor:pointer;
+  }
+  .tab.active{background:var(--gold); color:#1A1300; border-color:var(--gold); font-weight:600;}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{
+    text-align:left;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  th:hover{color:var(--text);}
+  td{padding:10px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+
+  .platform-badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    padding:3px 8px;
+    border-radius:5px;
+    text-transform:uppercase;
+  }
+  .p-tiktok{background:#2A1230; color:#FF3B7F;}
+  .p-shopee{background:#331A0F; color:#FF7A1A;}
+  .p-lazada{background:#0F1F33; color:#3D9EFF;}
+  .p-facebook{background:#0F1A33; color:#4E7DFF;}
+
+  .pulse{display:flex; align-items:center; gap:6px;}
+  .pulse-bar{
+    width:60px; height:6px; border-radius:3px;
+    background:var(--surface-2);
+    overflow:hidden;
+    position:relative;
+  }
+  .pulse-fill{height:100%; border-radius:3px;}
+  .score-hot .pulse-fill{background:var(--coral);}
+  .score-warm .pulse-fill{background:var(--gold);}
+  .score-cool .pulse-fill{background:var(--mint);}
+
+  .status-pill{
+    font-size:11px;
+    padding:3px 9px;
+    border-radius:999px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .status-scanned{background:#1E222B; color:var(--muted); border:1px solid var(--border);}
+  .status-approved{background:rgba(61,220,151,0.12); color:var(--mint); border:1px solid rgba(61,220,151,0.3);}
+  .status-rejected{background:rgba(255,107,91,0.1); color:var(--coral); border:1px solid rgba(255,107,91,0.25);}
+
+  .row-actions{display:flex; gap:6px;}
+  .row-actions button{padding:5px 10px; font-size:11px;}
+  .btn-approve{background:var(--mint); color:#04231A;}
+  .btn-reject{background:transparent; border:1px solid var(--border); color:var(--muted);}
+  .btn-reject:hover{color:var(--coral); border-color:var(--coral);}
+
+  .empty{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .empty b{color:var(--text); display:block; margin-bottom:4px; font-size:14px;}
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    padding:20px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+
+  @media(max-width:700px){
+    form.add-form{grid-template-columns:repeat(2,1fr);}
+    table{font-size:12px;}
+    th:nth-child(6),td:nth-child(6){display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Module 01 · MVP Phase 1</div>
+  <h1>Trend Scanner + Product Queue</h1>
+  <div class="sub">สแกน/บันทึกสินค้ากระแส จัดอันดับ แล้วอนุมัติเข้าคิวสร้างคลิป — ข้อมูลบันทึกอัตโนมัติในเบราว์เซอร์นี้</div>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<main>
+
+  <div class="panel" id="syncPanel">
+    <h2>ซิงค์จาก Backend Scraper <span class="tag">Supabase</span></h2>
+    <div style="color:var(--muted); font-size:12px; margin-bottom:12px;">
+      ใส่ข้อมูลเชื่อมต่อ Supabase ของโปรเจกต์ (ดู URL/anon key ได้ที่ Project Settings → API)
+      แล้วกด "ซิงค์ตอนนี้" เพื่อดึงสินค้าที่ backend scraper เก็บมาให้อัตโนมัติ
+    </div>
+    <div class="add-form" style="grid-template-columns:2fr 2fr auto;">
+      <div>
+        <label>Supabase URL</label>
+        <input type="text" id="sb_url" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div>
+        <label>Anon Key (public)</label>
+        <input type="text" id="sb_key" placeholder="eyJhbGciOi...">
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button type="button" class="btn-primary" id="syncBtn" style="white-space:nowrap;">↻ ซิงค์ตอนนี้</button>
+      </div>
+    </div>
+    <div id="syncStatus" style="font-size:12px; color:var(--muted); margin-top:10px;"></div>
+  </div>
+
+  <div class="panel">
+    <h2>วางลิงก์สินค้า <span class="tag">ดึงชื่อ+ราคาอัตโนมัติ</span></h2>
+    <div style="color:var(--muted); font-size:12px; margin-bottom:12px;">
+      วางลิงก์สินค้า (TikTok Shop / Shopee / Lazada) ระบบจะพยายามดึงชื่อและราคาให้อัตโนมัติ
+      (ถ้าตั้งค่า Supabase Edge Function ไว้ในแผง "ซิงค์จาก Backend" ด้านบน จะใช้ทางนั้นก่อนเพราะเสถียรกว่า proxy ฟรี)
+      ส่วน<b style="color:var(--gold);">ค่าคอมมิชชั่นต้องกรอกเองเสมอ</b> เพราะเป็นข้อมูลในระบบ Affiliate ส่วนตัวที่ไม่มีที่ไหนแสดงสาธารณะ
+    </div>
+    <div class="import-row" style="display:flex; gap:10px;">
+      <input type="text" id="link_url" placeholder="วางลิงก์สินค้าที่นี่ เช่น https://shopee.co.th/...-i.123.456" style="flex:1;">
+      <button type="button" class="btn-primary" id="fetchLinkBtn" style="white-space:nowrap;">↓ ดึงข้อมูล</button>
+    </div>
+    <div id="linkStatus" style="font-size:12px; color:var(--muted); margin-top:10px;"></div>
+  </div>
+
+  <div class="panel">
+    <h2>เพิ่มสินค้าที่สแกนเจอ <span class="tag">manual entry</span></h2>
+    <form class="add-form" id="addForm">
+      <div>
+        <label>แพลตฟอร์ม</label>
+        <select id="f_platform">
+          <option value="tiktok">TikTok Shop</option>
+          <option value="shopee">Shopee</option>
+          <option value="lazada">Lazada</option>
+          <option value="facebook">Facebook</option>
+        </select>
+      </div>
+      <div style="grid-column:span 2;">
+        <label>ชื่อสินค้า</label>
+        <input type="text" id="f_name" placeholder="เช่น เซรั่มวิตซี 20%" required>
+      </div>
+      <div>
+        <label>ราคา (บาท)</label>
+        <input type="number" id="f_price" placeholder="299" min="0" required>
+      </div>
+      <div>
+        <label>ค่าคอมมิชชั่น (%)</label>
+        <input type="number" id="f_commission" placeholder="15" min="0" max="100" required>
+      </div>
+      <div>
+        <label>คะแนนกระแส (0-100)</label>
+        <input type="number" id="f_trend" placeholder="80" min="0" max="100" required>
+      </div>
+      <div class="full">
+        <label>หมวดหมู่</label>
+        <input type="text" id="f_category" placeholder="เช่น ความงาม, สุขภาพ, ของใช้ในบ้าน">
+      </div>
+      <div class="full" style="display:flex; justify-content:flex-end; margin-top:4px;">
+        <button type="submit" class="btn-primary">+ เพิ่มเข้ารายการสแกน</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>รายการสินค้า <span class="tag" id="countTag">0 รายการ</span>
+      <button type="button" class="btn-ghost" id="exportBtn" style="margin-left:auto;">⇩ ส่งออกสินค้าอนุมัติ (สำหรับ Video Generator)</button>
+    </h2>
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-filter="all">ทั้งหมด</div>
+      <div class="tab" data-filter="scanned">รอตัดสินใจ</div>
+      <div class="tab" data-filter="approved">อนุมัติแล้ว (คิวสร้างคลิป)</div>
+      <div class="tab" data-filter="rejected">ปฏิเสธแล้ว</div>
+    </div>
+    <div id="tableWrap"></div>
+  </div>
+
+</main>
+
+<footer>TREND SCANNER · LOCAL STORAGE (PERSONAL) · MODULE 01/05</footer>
+
+<script>
+let products = [];
+let currentFilter = 'all';
+let sortKey = 'trend_score';
+let sortDir = -1;
+
+const STORAGE_KEY = 'trend-scanner-products';
+
+async function loadProducts(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY);
+    products = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    products = [];
+  }
+  render();
+}
+
+async function saveProducts(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(products));
+  }catch(e){
+    console.error('บันทึกไม่สำเร็จ', e);
+  }
+}
+
+function platformLabel(p){
+  return {tiktok:'TikTok', shopee:'Shopee', lazada:'Lazada', facebook:'Facebook'}[p] || p;
+}
+
+function scoreClass(score){
+  if(score >= 70) return 'score-hot';
+  if(score >= 40) return 'score-warm';
+  return 'score-cool';
+}
+
+function statusLabel(s){
+  return {scanned:'รอตัดสินใจ', approved:'อนุมัติแล้ว', rejected:'ปฏิเสธแล้ว'}[s] || s;
+}
+
+function renderStats(){
+  const total = products.length;
+  const approved = products.filter(p=>p.status==='approved').length;
+  const avgCommission = total ? (products.reduce((s,p)=>s+Number(p.commission_rate),0)/total).toFixed(1) : '0';
+  const hot = products.filter(p=>p.trend_score>=70).length;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="num mono">${total}</div><div class="label">สินค้าทั้งหมด</div></div>
+    <div class="stat mint"><div class="num mono">${approved}</div><div class="label">เข้าคิวสร้างคลิป</div></div>
+    <div class="stat gold"><div class="num mono">${avgCommission}%</div><div class="label">คอมมิชชั่นเฉลี่ย</div></div>
+    <div class="stat coral"><div class="num mono">${hot}</div><div class="label">กระแสแรง (70+)</div></div>
+  `;
+}
+
+function renderTable(){
+  let list = products.filter(p => currentFilter==='all' ? true : p.status===currentFilter);
+  list = list.slice().sort((a,b)=>{
+    if(sortKey==='name') return sortDir * a.name.localeCompare(b.name);
+    return sortDir * (Number(a[sortKey]) - Number(b[sortKey]));
+  });
+
+  document.getElementById('countTag').textContent = list.length + ' รายการ';
+
+  if(list.length===0){
+    document.getElementById('tableWrap').innerHTML = `
+      <div class="empty">
+        <b>ยังไม่มีสินค้าในรายการนี้</b>
+        เพิ่มสินค้าที่สแกนเจอด้านบน แล้วมันจะมาปรากฏที่นี่
+      </div>`;
+    return;
+  }
+
+  const rows = list.map(p => `
+    <tr>
+      <td><span class="platform-badge p-${p.platform}">${platformLabel(p.platform)}</span></td>
+      <td>${p.name}${p.category ? `<div style="color:var(--muted); font-size:11px; margin-top:2px;">${p.category}</div>` : ''}</td>
+      <td class="mono">฿${Number(p.price).toLocaleString()}</td>
+      <td class="mono">${p.commission_rate}%</td>
+      <td>
+        <div class="pulse ${scoreClass(p.trend_score)}">
+          <span class="mono">${p.trend_score}</span>
+          <div class="pulse-bar"><div class="pulse-fill" style="width:${p.trend_score}%"></div></div>
+        </div>
+      </td>
+      <td><span class="status-pill status-${p.status}">${statusLabel(p.status)}</span></td>
+      <td>
+        <div class="row-actions">
+          ${p.status !== 'approved' ? `<button class="btn-approve" onclick="setStatus('${p.id}','approved')">อนุมัติ</button>` : ''}
+          ${p.status !== 'rejected' ? `<button class="btn-reject" onclick="setStatus('${p.id}','rejected')">ปฏิเสธ</button>` : ''}
+          <button class="btn-reject" onclick="removeProduct('${p.id}')" title="ลบ">✕</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('tableWrap').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th data-key="platform">แพลตฟอร์ม</th>
+          <th data-key="name">สินค้า</th>
+          <th data-key="price">ราคา</th>
+          <th data-key="commission_rate">คอมมิชชั่น</th>
+          <th data-key="trend_score">คะแนนกระแส</th>
+          <th>สถานะ</th>
+          <th>จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+
+  document.querySelectorAll('th[data-key]').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(sortKey===key){ sortDir *= -1; } else { sortKey = key; sortDir = -1; }
+      renderTable();
+    });
+  });
+}
+
+function render(){
+  renderStats();
+  renderTable();
+}
+
+window.setStatus = async function(id, status){
+  const p = products.find(x=>x.id===id);
+  if(p){ p.status = status; await saveProducts(); render(); }
+};
+
+window.removeProduct = async function(id){
+  products = products.filter(x=>x.id!==id);
+  await saveProducts();
+  render();
+};
+
+document.getElementById('exportBtn').addEventListener('click', async ()=>{
+  const approved = products.filter(p=>p.status==='approved').map(p=>({
+    platform: p.platform, name: p.name, price: p.price,
+    commission_rate: p.commission_rate, trend_score: p.trend_score, category: p.category
+  }));
+  if(approved.length===0){
+    alert('ยังไม่มีสินค้าที่อนุมัติ — กด "อนุมัติ" ที่รายการก่อน แล้วค่อยส่งออก');
+    return;
+  }
+  const json = JSON.stringify(approved, null, 2);
+  try{
+    await navigator.clipboard.writeText(json);
+    alert(`คัดลอก ${approved.length} รายการเป็น JSON แล้ว — ไปวางในหน้า Video Generator ได้เลย`);
+  }catch(e){
+    prompt('คัดลอกอัตโนมัติไม่สำเร็จ — เลือกข้อความด้านล่างแล้วก็อปเอง (Ctrl+C):', json);
+  }
+});
+
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  currentFilter = tab.dataset.filter;
+  renderTable();
+});
+
+document.getElementById('addForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const newProduct = {
+    id: 'p_' + Date.now(),
+    platform: document.getElementById('f_platform').value,
+    name: document.getElementById('f_name').value.trim(),
+    price: document.getElementById('f_price').value,
+    commission_rate: document.getElementById('f_commission').value,
+    trend_score: document.getElementById('f_trend').value,
+    category: document.getElementById('f_category').value.trim(),
+    status: 'scanned',
+    addedAt: new Date().toISOString()
+  };
+  products.unshift(newProduct);
+  await saveProducts();
+  e.target.reset();
+  render();
+});
+
+const SB_CONFIG_KEY = 'trend-scanner-sb-config';
+
+async function loadSbConfig(){
+  try{
+    const res = await window.storage.get(SB_CONFIG_KEY);
+    if(res){
+      const cfg = JSON.parse(res.value);
+      document.getElementById('sb_url').value = cfg.url || '';
+      document.getElementById('sb_key').value = cfg.key || '';
+    }
+  }catch(e){ /* ยังไม่เคยตั้งค่า ไม่เป็นไร */ }
+}
+
+async function saveSbConfig(url, key){
+  await window.storage.set(SB_CONFIG_KEY, JSON.stringify({ url, key }));
+}
+
+function mergeProducts(incoming){
+  incoming.forEach(newP => {
+    const existing = products.find(p =>
+      p.external_product_id === newP.external_product_id && p.platform === newP.platform
+    );
+    if(existing){
+      // เก็บ status เดิมที่คนเลือกไว้ (approved/rejected) แต่รีเฟรชข้อมูลตัวเลข
+      existing.name = newP.name;
+      existing.price = newP.price;
+      existing.trend_score = newP.trend_score;
+      existing.sales_velocity = newP.sales_velocity;
+      existing.commission_rate = newP.commission_rate ?? existing.commission_rate;
+    } else {
+      products.unshift({
+        id: 'p_' + (newP.external_product_id || Date.now() + Math.random()),
+        platform: newP.platform,
+        name: newP.name,
+        price: newP.price || 0,
+        commission_rate: newP.commission_rate || 0,
+        trend_score: newP.trend_score || 0,
+        category: newP.category || '',
+        status: 'scanned',
+        external_product_id: newP.external_product_id,
+        addedAt: new Date().toISOString()
+      });
+    }
+  });
+}
+
+document.getElementById('syncBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('sb_url').value.trim().replace(/\/$/, '');
+  const key = document.getElementById('sb_key').value.trim();
+  const statusEl = document.getElementById('syncStatus');
+
+  if(!url || !key){
+    statusEl.textContent = '⚠️ กรอก Supabase URL และ Anon Key ก่อนซิงค์';
+    statusEl.style.color = 'var(--coral)';
+    return;
+  }
+
+  await saveSbConfig(url, key);
+  statusEl.textContent = 'กำลังซิงค์...';
+  statusEl.style.color = 'var(--muted)';
+
+  try{
+    const res = await fetch(`${url}/rest/v1/products?select=*&order=trend_score.desc&limit=200`, {
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`
+      }
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    mergeProducts(data);
+    await saveProducts();
+    render();
+
+    statusEl.textContent = `✅ ซิงค์สำเร็จ ${data.length} รายการ — ${new Date().toLocaleTimeString('th-TH')}`;
+    statusEl.style.color = 'var(--mint)';
+  }catch(err){
+    statusEl.textContent = `❌ ซิงค์ไม่สำเร็จ: ${err.message} (เช็ค URL/Key หรือ backend scraper รันหรือยัง)`;
+    statusEl.style.color = 'var(--coral)';
+  }
+});
+
+function detectPlatformFromUrl(url){
+  if(/tiktok\.(com|shop)/.test(url)) return 'tiktok';
+  if(/shopee\./.test(url)) return 'shopee';
+  if(/lazada\./.test(url)) return 'lazada';
+  if(/facebook\.com|fb\.watch/.test(url)) return 'facebook';
+  return null;
+}
+
+function extractProductInfo(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  const getMeta = (prop) => {
+    const el = doc.querySelector(`meta[property="${prop}"], meta[name="${prop}"]`);
+    return el ? el.getAttribute('content') : null;
+  };
+
+  let name = getMeta('og:title') || (doc.querySelector('title') ? doc.querySelector('title').textContent : null);
+
+  let price = null;
+  const priceMeta = getMeta('product:price:amount') || getMeta('og:price:amount');
+  if(priceMeta) price = parseFloat(priceMeta.replace(/[^\d.]/g, ''));
+
+  // ถ้าไม่เจอใน meta tag ลองหาใน JSON-LD (script type="application/ld+json")
+  if(!price){
+    const ldScripts = doc.querySelectorAll('script[type="application/ld+json"]');
+    for(const s of ldScripts){
+      try{
+        const json = JSON.parse(s.textContent);
+        const offer = json.offers || (Array.isArray(json) ? json.find(j=>j.offers)?.offers : null);
+        if(offer){
+          const p = Array.isArray(offer) ? offer[0].price : offer.price;
+          if(p){ price = parseFloat(String(p).replace(/[^\d.]/g,'')); break; }
+        }
+      }catch(e){ /* ข้าม script ที่ parse ไม่ได้ */ }
+    }
+  }
+
+  // สำรอง: หาตัวเลขราคาแบบ regex ในหน้าเว็บดิบ (แม่นยำน้อยกว่า ใช้เป็นทางเลือกสุดท้าย)
+  if(!price){
+    const match = html.match(/"price"\s*:\s*"?(\d+(\.\d+)?)"?/);
+    if(match) price = parseFloat(match[1]);
+  }
+
+  return { name: name ? name.trim().slice(0, 200) : null, price };
+}
+
+async function tryFetchViaEdgeFunction(url){
+  try{
+    const res = await window.storage.get(SB_CONFIG_KEY);
+    if(!res) return null;
+    const cfg = JSON.parse(res.value);
+    if(!cfg.url || !cfg.key) return null;
+
+    // ตัด path ส่วนเกินออก (เผื่อพี่เดชวางมาแบบมี /rest/v1/ หรือ path อื่นต่อท้าย) เอาแค่ origin จริงๆ
+    let baseUrl;
+    try{
+      baseUrl = new URL(cfg.url).origin;
+    }catch(e){
+      baseUrl = cfg.url.replace(/\/$/, '');
+    }
+    const endpoint = `${baseUrl}/functions/v1/fetch-product`;
+    const fnRes = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cfg.key}`,
+        'apikey': cfg.key
+      },
+      body: JSON.stringify({ url })
+    });
+    if(!fnRes.ok) return null;
+    const data = await fnRes.json();
+    if(data.error || !data.html) return null;
+    return { text: data.html, isRaw: true, source: 'Supabase Edge Function (ของตัวเอง)' };
+  }catch(e){
+    return null;
+  }
+}
+
+async function tryFetchHtml(url){
+  // ลองทางของตัวเอง (Edge Function) ก่อน ถ้าตั้งค่าไว้ — เสถียรกว่า proxy ฟรีทั่วไป
+  const ownResult = await tryFetchViaEdgeFunction(url);
+  if(ownResult) return ownResult;
+
+  // ถ้าไม่มี/ล้มเหลว ลอง proxy สาธารณะฟรีตามลำดับ
+  const attempts = [
+    { name: 'corsproxy.io', build: (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`, isRaw: true },
+    { name: 'allorigins', build: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, isRaw: true },
+    { name: 'r.jina.ai', build: (u) => `https://r.jina.ai/${u}`, isRaw: false }, // คืนเป็น text/markdown ไม่ใช่ HTML
+  ];
+
+  for(const attempt of attempts){
+    try{
+      const res = await fetch(attempt.build(url));
+      if(!res.ok) continue;
+      const text = await res.text();
+      if(text && text.length > 200) return { text, isRaw: attempt.isRaw, source: attempt.name };
+    }catch(e){ /* ลองตัวถัดไป */ }
+  }
+  return null;
+}
+
+function extractFromMarkdownText(text){
+  // r.jina.ai คืนเป็น markdown — หาชื่อจากบรรทัดแรกๆ และราคาจาก pattern สกุลเงิน
+  const titleMatch = text.match(/^#\s*(.+)$/m) || text.match(/Title:\s*(.+)/);
+  const name = titleMatch ? titleMatch[1].trim().slice(0, 200) : null;
+
+  let price = null;
+  const priceMatch = text.match(/฿\s?([\d,]+(\.\d+)?)/) || text.match(/(?:THB|บาท)\s?([\d,]+(\.\d+)?)/i);
+  if(priceMatch) price = parseFloat(priceMatch[1].replace(/,/g, ''));
+
+  return { name, price };
+}
+
+document.getElementById('fetchLinkBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('link_url').value.trim();
+  const statusEl = document.getElementById('linkStatus');
+
+  if(!url){
+    statusEl.textContent = '⚠️ วางลิงก์สินค้าก่อน';
+    statusEl.style.color = 'var(--coral)';
+    return;
+  }
+
+  const platform = detectPlatformFromUrl(url);
+  if(!platform){
+    statusEl.textContent = '⚠️ ไม่รู้จักแพลตฟอร์มจากลิงก์นี้ — รองรับ TikTok Shop, Shopee, Lazada, Facebook';
+    statusEl.style.color = 'var(--coral)';
+    return;
+  }
+
+  statusEl.textContent = 'กำลังดึงข้อมูล... (อาจลองหลายทางสำรอง ใช้เวลาสักครู่)';
+  statusEl.style.color = 'var(--muted)';
+
+  try{
+    const result = await tryFetchHtml(url);
+    if(!result) throw new Error('ทุกช่องทางดึงข้อมูลไม่สำเร็จ');
+
+    const info = result.isRaw ? extractProductInfo(result.text) : extractFromMarkdownText(result.text);
+
+    document.getElementById('f_platform').value = platform;
+    if(info.name) document.getElementById('f_name').value = info.name;
+    if(info.price) document.getElementById('f_price').value = info.price;
+
+    if(info.name && info.price){
+      statusEl.textContent = `✅ ดึงสำเร็จผ่าน ${result.source}: ${info.name} — ฿${info.price} (กรอกค่าคอมมิชชั่นและคะแนนกระแสเองด้านล่าง แล้วกด "เพิ่มเข้ารายการสแกน")`;
+      statusEl.style.color = 'var(--mint)';
+    } else if(info.name){
+      statusEl.textContent = `⚠️ ดึงชื่อสินค้าได้ (ผ่าน ${result.source}) แต่ดึงราคาไม่สำเร็จ — กรอกราคาเองด้านล่าง`;
+      statusEl.style.color = 'var(--gold)';
+    } else {
+      statusEl.textContent = `⚠️ ดึงเนื้อหาได้ผ่าน ${result.source} แต่หาชื่อ/ราคาในนั้นไม่เจอ (หน้านี้อาจต้อง login หรือ render ด้วย JS ล้วนๆ) — กรอกด้วยมือด้านล่างแทนได้เลย`;
+      statusEl.style.color = 'var(--coral)';
+    }
+  }catch(e){
+    statusEl.textContent = `❌ ดึงข้อมูลไม่สำเร็จ: ${e.message} — กรอกด้วยมือด้านล่างแทนได้เลย`;
+    statusEl.style.color = 'var(--coral)';
+  }
+});
+
+loadSbConfig();
+loadProducts();
+</script>
+
+</body>
+</html>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trend Scanner — Product Queue</title>
