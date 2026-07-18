@@ -274,6 +274,10 @@
       <button type="button" class="btn-primary" id="fetchLinkBtn" style="white-space:nowrap;">↓ ดึงข้อมูล</button>
     </div>
     <div id="linkStatus" style="font-size:12px; color:var(--muted); margin-top:10px;"></div>
+    <div id="rawDebugWrap" style="display:none; margin-top:10px;">
+      <span id="rawDebugToggle" style="cursor:pointer; color:var(--muted); font-size:11px; text-decoration:underline;">ดูเนื้อหาดิบที่ดึงมาได้ (สำหรับ debug)</span>
+      <textarea id="rawDebugText" readonly style="display:none; margin-top:8px; height:200px; font-family:'IBM Plex Mono',monospace; font-size:11px;"></textarea>
+    </div>
   </div>
 
   <div class="panel">
@@ -734,6 +738,11 @@ function extractFromMarkdownText(text){
   return { name, price };
 }
 
+document.getElementById('rawDebugToggle').addEventListener('click', ()=>{
+  const el = document.getElementById('rawDebugText');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+});
+
 document.getElementById('fetchLinkBtn').addEventListener('click', async ()=>{
   const url = document.getElementById('link_url').value.trim();
   const statusEl = document.getElementById('linkStatus');
@@ -759,6 +768,10 @@ document.getElementById('fetchLinkBtn').addEventListener('click', async ()=>{
     if(!result) throw new Error('ทุกช่องทางดึงข้อมูลไม่สำเร็จ');
 
     const info = result.isRaw ? extractProductInfo(result.text) : extractFromMarkdownText(result.text);
+
+    // เก็บเนื้อหาดิบไว้ให้ดูได้ (ช่วย debug ว่าทำไมดึงราคาไม่เจอ)
+    document.getElementById('rawDebugWrap').style.display = 'block';
+    document.getElementById('rawDebugText').value = result.text.slice(0, 5000);
 
     document.getElementById('f_platform').value = platform;
     if(info.name) document.getElementById('f_name').value = info.name;
