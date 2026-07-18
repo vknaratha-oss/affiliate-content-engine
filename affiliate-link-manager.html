@@ -1,7 +1,581 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+<meta charset="UTF-8"><!DOCTYPE html>
+<html lang="th">
+<head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affiliate Link Manager — Publish Queue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1115; --surface:#171A21; --surface-2:#1E222B; --border:#2A2F3A;
+    --text:#EDEFF4; --muted:#8891A5;
+    --gold:#E8A33D; --coral:#FF6B5B; --mint:#3DDC97; --violet:#9B7BFF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; -webkit-font-smoothing:antialiased;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  header{padding:28px 24px 20px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#151822 0%, #0F1115 100%);}
+  .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--mint); margin-bottom:6px;}
+  h1{margin:0; font-size:26px; font-weight:800; letter-spacing:-0.02em;}
+  .sub{color:var(--muted); font-size:13px; margin-top:6px;}
+
+  main{max-width:1100px; margin:0 auto; padding:20px 24px 60px;}
+
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:20px;}
+  .panel h2{font-size:15px; margin:0 0 14px; font-weight:700; display:flex; align-items:center; gap:8px;}
+  .panel h2 .tag{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); border:1px solid var(--border); padding:2px 6px; border-radius:5px;}
+
+  label{font-size:11px; color:var(--muted); display:block; margin-bottom:4px;}
+  input,select,textarea{
+    width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+    border-radius:7px; padding:8px 10px; font-size:13px; font-family:'Sora',sans-serif;
+  }
+  textarea{font-family:'Sora',sans-serif; line-height:1.6; resize:vertical;}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--mint);}
+  button{cursor:pointer; border:none; border-radius:7px; font-family:'Sora',sans-serif; font-weight:600; font-size:13px;}
+  .btn-primary{background:var(--mint); color:#04231A; padding:10px 18px;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:disabled{opacity:0.5; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border:1px solid var(--border); color:var(--muted); padding:8px 14px;}
+  .btn-ghost:hover{color:var(--text); border-color:var(--muted);}
+
+  .import-row{display:flex; gap:10px;}
+  .import-row textarea{flex:1; height:60px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .fb-guide{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:8px;
+    padding:12px 14px; font-size:12px; color:var(--muted); line-height:1.9;
+  }
+  .fb-guide b{color:var(--text);}
+  .fb-guide code{background:var(--surface); padding:1px 5px; border-radius:4px; color:var(--gold);}
+
+  .cards{display:flex; flex-direction:column; gap:12px;}
+  .card{background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); padding:16px;}
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  .card-title{font-weight:700; font-size:14px;}
+  .card-meta{color:var(--muted); font-size:12px; margin-top:2px; display:flex; gap:10px; flex-wrap:wrap;}
+  .platform-badge{font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px; border-radius:5px; text-transform:uppercase;}
+  .p-tiktok{background:#2A1230; color:#FF3B7F;}
+  .p-shopee{background:#331A0F; color:#FF7A1A;}
+  .p-lazada{background:#0F1F33; color:#3D9EFF;}
+  .p-facebook{background:#0F1A33; color:#4E7DFF;}
+
+  .status-pill{font-size:11px; padding:3px 9px; border-radius:999px; font-family:'IBM Plex Mono',monospace; white-space:nowrap;}
+  .status-no_link{background:#1E222B; color:var(--muted); border:1px solid var(--border);}
+  .status-ready{background:rgba(232,163,61,0.12); color:var(--gold); border:1px solid rgba(232,163,61,0.3);}
+  .status-posted{background:rgba(61,220,151,0.12); color:var(--mint); border:1px solid rgba(61,220,151,0.3);}
+
+  .card-body{margin-top:12px; display:grid; gap:10px;}
+  .row{display:grid; grid-template-columns:1fr; gap:6px;}
+  .row-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
+  .row-actions button{padding:6px 12px; font-size:12px;}
+
+  .best-time{
+    font-size:11px; color:var(--muted); background:var(--surface);
+    border:1px dashed var(--border); border-radius:7px; padding:8px 10px; margin-top:4px;
+  }
+  .best-time b{color:var(--gold);}
+
+  .cart-box{
+    background:rgba(61,220,151,0.06); border:1px solid rgba(61,220,151,0.25);
+    border-radius:8px; padding:10px 12px; margin-top:4px;
+  }
+  .cart-guide-toggle{
+    display:inline-block; margin-top:8px; font-size:11px; color:var(--mint);
+    cursor:pointer; text-decoration:underline;
+  }
+  .cart-guide{
+    margin-top:8px; font-size:12px; color:var(--muted); line-height:1.8;
+    border-top:1px dashed var(--border); padding-top:8px;
+  }
+
+  .empty{text-align:center; padding:40px 20px; color:var(--muted); font-size:13px;}
+  .empty b{color:var(--text); display:block; margin-bottom:4px; font-size:14px;}
+
+  footer{text-align:center; color:var(--muted); font-size:11px; padding:20px; font-family:'IBM Plex Mono',monospace;}
+
+  @media(max-width:700px){ .card-top{flex-direction:column;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Module 03 · MVP Phase 3</div>
+  <h1>Affiliate Link Manager + Publish Queue</h1>
+  <div class="sub">แปะลิงก์ affiliate จริง สร้างแคปชัน/แฮชแท็กด้วย AI แล้วเตรียมชุดโพสต์ให้กดโพสต์ได้ใน 1 คลิก</div>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>เชื่อมต่อ Facebook Page <span class="tag" id="fbStatusTag">ยังไม่เชื่อมต่อ</span></h2>
+    <span class="settings-toggle" id="fbSettingsToggle" style="cursor:pointer; color:var(--muted); font-size:12px; text-decoration:underline; margin-bottom:12px; display:inline-block;">แสดง/ซ่อนการตั้งค่า + วิธีเอา Token</span>
+    <div id="fbSettings" style="display:none;">
+      <div class="fb-guide">
+        <b>วิธีเอา Page ID และ Page Access Token (ทำครั้งเดียว):</b>
+        <div>1. ไปที่ developers.facebook.com → My Apps → Create App → เลือกประเภท "Business"</div>
+        <div>2. ไปที่ Tools → Graph API Explorer (เมนูด้านบน)</div>
+        <div>3. เลือกแอปที่สร้าง → เลือก "User Token" → กด "Add a permission" ใส่: pages_manage_posts, pages_read_engagement, pages_show_list</div>
+        <div>4. กด "Generate Access Token" → เลือกเพจของคุณ → ยืนยัน</div>
+        <div>5. เปลี่ยน query เป็น <code>me/accounts</code> → กด Submit → จะได้ list เพจพร้อม "id" และ "access_token" ของแต่ละเพจ</div>
+        <div>6. คัดลอก id (Page ID) และ access_token (Page Access Token) มาใส่ด้านล่าง</div>
+        <div style="color:var(--coral); margin-top:6px;">⚠️ Token นี้มีอายุประมาณ 60 วัน ถ้าโพสต์ไม่ได้ให้กลับไปทำซ้ำขั้นตอน 2-6 เพื่อได้ token ใหม่</div>
+      </div>
+      <div class="grid2" style="margin-top:12px;">
+        <div>
+          <label>Facebook Page ID</label>
+          <input type="text" id="fb_page_id" placeholder="เช่น 123456789012345">
+        </div>
+        <div>
+          <label>Page Access Token</label>
+          <input type="text" id="fb_page_token" placeholder="EAAxxxxx...">
+        </div>
+      </div>
+      <button type="button" class="btn-ghost" id="saveFbBtn" style="margin-top:10px;">บันทึกการตั้งค่า Facebook</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>ตั้งค่าการเชื่อมต่อ <span class="tag" id="apiStatusTag">ยังไม่ใส่ Claude API Key</span></h2>
+    <span class="settings-toggle" id="settingsToggle" style="cursor:pointer; color:var(--muted); font-size:12px; text-decoration:underline; margin-bottom:12px; display:inline-block;">แสดง/ซ่อนการตั้งค่า</span>
+    <div id="apiSettings" style="display:none;">
+      <label>Claude API Key — ใช้สร้างแคปชัน (จาก console.anthropic.com)</label>
+      <input type="text" id="claude_apikey" placeholder="sk-ant-...">
+      <button type="button" class="btn-ghost" id="saveApiBtn" style="margin-top:10px;">บันทึกการตั้งค่า</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>นำเข้าจาก Video Generator <span class="tag">JSON import</span></h2>
+    <div class="import-row">
+      <textarea id="importBox" placeholder='วาง JSON ที่ก็อปจากปุ่ม "ส่งออกไป Affiliate Link Manager" ในหน้า Video Generator ที่นี่'></textarea>
+      <button type="button" class="btn-primary" id="importBtn" style="align-self:flex-start;">นำเข้า</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>คิวโพสต์ <span class="tag" id="countTag">0 รายการ</span>
+      <button type="button" class="btn-ghost" id="exportPostedBtn" style="margin-left:auto;">⇩ ส่งออกไป Revenue Dashboard</button>
+    </h2>
+    <div class="cards" id="cardsWrap"></div>
+  </div>
+
+</main>
+
+<footer>AFFILIATE LINK MANAGER · LOCAL STORAGE (PERSONAL) · MODULE 03/05</footer>
+
+<script>
+let items = [];
+const ITEMS_KEY = 'affiliate-link-items';
+const FB_CONFIG_KEY = 'affiliate-link-manager-fb-config';
+
+async function loadFbConfig(){
+  try{
+    const res = await window.storage.get(FB_CONFIG_KEY);
+    if(res){
+      const cfg = JSON.parse(res.value);
+      document.getElementById('fb_page_id').value = cfg.pageId || '';
+      document.getElementById('fb_page_token').value = cfg.pageToken || '';
+      updateFbStatusTag(cfg.pageId && cfg.pageToken);
+    }
+  }catch(e){}
+}
+function updateFbStatusTag(connected){
+  const tag = document.getElementById('fbStatusTag');
+  if(connected){
+    tag.textContent = 'เชื่อมต่อแล้ว';
+    tag.style.color = 'var(--mint)';
+  } else {
+    tag.textContent = 'ยังไม่เชื่อมต่อ';
+    tag.style.color = 'var(--muted)';
+  }
+}
+document.getElementById('fbSettingsToggle').addEventListener('click', ()=>{
+  const panel = document.getElementById('fbSettings');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('saveFbBtn').addEventListener('click', async ()=>{
+  const pageId = document.getElementById('fb_page_id').value.trim();
+  const pageToken = document.getElementById('fb_page_token').value.trim();
+  await window.storage.set(FB_CONFIG_KEY, JSON.stringify({pageId, pageToken}));
+  updateFbStatusTag(pageId && pageToken);
+  alert('บันทึกการตั้งค่า Facebook แล้ว');
+});
+
+window.postToFacebook = async function(id){
+  const it = items.find(x=>x.id===id);
+  if(!it || !it.video_url) return;
+
+  let cfg = {};
+  try{
+    const res = await window.storage.get(FB_CONFIG_KEY);
+    if(res) cfg = JSON.parse(res.value);
+  }catch(e){}
+
+  if(!cfg.pageId || !cfg.pageToken){
+    alert('ยังไม่ได้เชื่อมต่อ Facebook Page — ไปตั้งค่าที่แผง "เชื่อมต่อ Facebook Page" ด้านบนก่อน');
+    return;
+  }
+
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  const btn = card ? card.querySelector('button[onclick*="postToFacebook"]') : null;
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ กำลังโพสต์...'; }
+
+  it.fb_error = null;
+
+  try{
+    // ขั้น 1: โพสต์วิดีโอ (ใช้ file_url ให้ Facebook ดึงวิดีโอจากลิงก์สาธารณะเอง)
+    const videoParams = new URLSearchParams({
+      file_url: it.video_url,
+      description: it.caption || it.name,
+      access_token: cfg.pageToken
+    });
+    const videoRes = await fetch(`https://graph.facebook.com/v21.0/${cfg.pageId}/videos`, {
+      method: 'POST',
+      body: videoParams
+    });
+    const videoData = await videoRes.json();
+    if(videoData.error) throw new Error(videoData.error.message || 'โพสต์วิดีโอไม่สำเร็จ');
+
+    const videoId = videoData.id;
+
+    // ขั้น 2: ใส่ลิงก์ affiliate เป็นคอมเมนต์แรกใต้วิดีโอ
+    if(it.affiliate_link){
+      const commentParams = new URLSearchParams({
+        message: it.affiliate_link,
+        access_token: cfg.pageToken
+      });
+      const commentRes = await fetch(`https://graph.facebook.com/v21.0/${videoId}/comments`, {
+        method: 'POST',
+        body: commentParams
+      });
+      const commentData = await commentRes.json();
+      if(commentData.error) console.warn('ใส่คอมเมนต์ลิงก์ไม่สำเร็จ:', commentData.error.message);
+    }
+
+    it.fb_post_url = `https://www.facebook.com/${videoId}`;
+    it.status = 'posted';
+    await saveItems();
+    render();
+  }catch(e){
+    it.fb_error = 'โพสต์ Facebook ไม่สำเร็จ: ' + e.message;
+    await saveItems();
+    render();
+  }
+};
+
+const API_KEY_STORAGE = 'affiliate-link-manager-api-config';
+
+async function loadApiConfig(){
+  try{
+    const res = await window.storage.get(API_KEY_STORAGE);
+    if(res){
+      const cfg = JSON.parse(res.value);
+      document.getElementById('claude_apikey').value = cfg.claudeApiKey || '';
+      updateApiStatusTag(cfg.claudeApiKey);
+    }
+  }catch(e){}
+}
+function updateApiStatusTag(key){
+  const tag = document.getElementById('apiStatusTag');
+  if(key){
+    tag.textContent = 'ใส่ Claude API Key แล้ว';
+    tag.style.color = 'var(--mint)';
+  } else {
+    tag.textContent = 'ยังไม่ใส่ Claude API Key';
+    tag.style.color = 'var(--muted)';
+  }
+}
+document.getElementById('settingsToggle').addEventListener('click', ()=>{
+  const panel = document.getElementById('apiSettings');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('saveApiBtn').addEventListener('click', async ()=>{
+  const claudeApiKey = document.getElementById('claude_apikey').value.trim();
+  await window.storage.set(API_KEY_STORAGE, JSON.stringify({claudeApiKey}));
+  updateApiStatusTag(claudeApiKey);
+  alert('บันทึกการตั้งค่าแล้ว');
+});
+
+const BEST_TIMES = {
+  tiktok: 'ช่วง 19:00-21:00 หรือ 12:00-13:00 (พฤ-อา ยอดเข้าถึงสูงสุด)',
+  shopee: 'ช่วง 20:00-22:00 และช่วง Payday (25 - 5 ของเดือน)',
+  lazada: 'ช่วง 20:00-22:00 และวัน Double Date (11.11, 12.12 ฯลฯ)',
+  facebook: 'ช่วง 12:00-13:00 และ 19:00-21:00'
+};
+
+const CART_GUIDES = {
+  tiktok: [
+    'เปิดแอป TikTok (มือถือ) → กดอัปโหลดคลิปที่สร้างไว้',
+    'หน้าโพสต์ → กด "เพิ่มลิงก์" (Add link) → เลือกไอคอนสินค้า/ตะกร้า',
+    'เลือกสินค้าจาก Showcase ของคุณ (ต้องเพิ่มสินค้าเข้า Showcase ผ่าน TikTok Shop Affiliate Center ไว้ก่อน)',
+    'กดโพสต์ตามปกติ — ไอคอนตะกร้าจะขึ้นอัตโนมัติที่มุมจอ'
+  ],
+  shopee: [
+    'เปิดแอป Shopee → ไปที่แท็บ "Shopee วิดีโอ" หรือ "ฟีด"',
+    'อัปโหลดคลิปที่สร้างไว้ → แตะ "แนบสินค้า"',
+    'ค้นหา/เลือกสินค้าที่มีคอมมิชชั่น (จากรายการ Affiliate Marketplace ของคุณ)',
+    'กดโพสต์ — ลิงก์สินค้าจะติดไปกับคลิปทันที'
+  ],
+  lazada: [
+    'เปิดแอป Lazada → ไปที่แท็บ "วิดีโอ" หรือ "Content Creator"',
+    'อัปโหลดคลิปที่สร้างไว้ → แตะ "แนบสินค้า"',
+    'เลือกสินค้าจากรายการ Affiliate ที่เคยเพิ่มไว้',
+    'กดโพสต์ — สินค้าจะแสดงเป็นลิงก์ในคลิปอัตโนมัติ'
+  ],
+  facebook: [
+    'โพสต์วิดีโอตามปกติในเพจ/โปรไฟล์',
+    'ถ้าเชื่อมบัญชี Facebook Shop ไว้แล้ว กด "แท็กสินค้า" (Tag Products) บนวิดีโอ',
+    'ถ้ายังไม่ได้เชื่อม Facebook Shop ให้แปะลิงก์ affiliate ไว้ที่คอมเมนต์แรกใต้คลิปแทน',
+    'ปักคอมเมนต์นั้นให้อยู่บนสุด (Pin Comment) เพื่อให้คนเห็นง่าย'
+  ]
+};
+
+window.toggleGuide = function(id){
+  const el = document.getElementById('guide-' + id);
+  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+window.setCartPinned = async function(id, checked){
+  const it = items.find(x=>x.id===id);
+  if(it){ it.cart_pinned = checked; await saveItems(); }
+};
+
+function platformLabel(p){ return {tiktok:'TikTok', shopee:'Shopee', lazada:'Lazada', facebook:'Facebook'}[p] || p; }
+function statusLabel(s){ return {no_link:'ยังไม่มีลิงก์', ready:'พร้อมโพสต์', posted:'โพสต์แล้ว'}[s] || s; }
+
+async function loadItems(){
+  try{
+    const res = await window.storage.get(ITEMS_KEY);
+    items = res ? JSON.parse(res.value) : [];
+  }catch(e){ items = []; }
+  render();
+}
+async function saveItems(){
+  try{ await window.storage.set(ITEMS_KEY, JSON.stringify(items)); }
+  catch(e){ console.error('บันทึกไม่สำเร็จ', e); }
+}
+
+document.getElementById('importBtn').addEventListener('click', async ()=>{
+  const raw = document.getElementById('importBox').value.trim();
+  if(!raw){ alert('ยังไม่ได้วาง JSON'); return; }
+  try{
+    const parsed = JSON.parse(raw);
+    if(!Array.isArray(parsed)) throw new Error('รูปแบบไม่ถูกต้อง');
+    parsed.forEach(p => {
+      items.unshift({
+        id: 'a_' + Date.now() + Math.random().toString(36).slice(2,6),
+        name: p.name,
+        platform: p.platform || 'tiktok',
+        price: p.price || null,
+        commission_rate: p.commission_rate || null,
+        script: p.script || '',
+        video_url: p.video_url || null,
+        affiliate_link: '',
+        caption: '',
+        hashtags: '',
+        status: 'no_link',
+        created_at: new Date().toISOString()
+      });
+    });
+    await saveItems();
+    document.getElementById('importBox').value = '';
+    render();
+    alert(`นำเข้าสำเร็จ ${parsed.length} รายการ`);
+  }catch(e){
+    alert('อ่าน JSON ไม่สำเร็จ: ' + e.message);
+  }
+});
+
+function render(){
+  document.getElementById('countTag').textContent = items.length + ' รายการ';
+  if(items.length===0){
+    document.getElementById('cardsWrap').innerHTML = `
+      <div class="empty">
+        <b>ยังไม่มีรายการ</b>
+        นำเข้าจาก Video Generator ด้านบนก่อน
+      </div>`;
+    return;
+  }
+
+  document.getElementById('cardsWrap').innerHTML = items.map(it => `
+    <div class="card" data-id="${it.id}">
+      <div class="card-top">
+        <div>
+          <div class="card-title">${it.name}</div>
+          <div class="card-meta">
+            <span class="platform-badge p-${it.platform}">${platformLabel(it.platform)}</span>
+            ${it.price ? `<span class="mono">฿${Number(it.price).toLocaleString()}</span>` : ''}
+            ${it.commission_rate ? `<span class="mono">คอมมิชชั่น ${it.commission_rate}%</span>` : ''}
+            ${it.video_url ? `<span class="mono" style="color:var(--mint);">มีวิดีโอแล้ว</span>` : `<span class="mono" style="color:var(--coral);">ยังไม่มีวิดีโอ</span>`}
+          </div>
+        </div>
+        <span class="status-pill status-${it.status}">${statusLabel(it.status)}</span>
+      </div>
+
+      <div class="card-body">
+        <div class="row">
+          <label>ลิงก์ Affiliate จริง (ก็อปจากแอป/แดชบอร์ด affiliate ของแพลตฟอร์มนั้นๆ)</label>
+          <input type="text" value="${it.affiliate_link}" placeholder="วางลิงก์ affiliate ที่นี่" onchange="setField('${it.id}','affiliate_link', this.value)">
+        </div>
+
+        <div class="row">
+          <label>แคปชัน + แฮชแท็ก</label>
+          <textarea rows="3" placeholder="ยังไม่มีแคปชัน — กด 'สร้างแคปชันด้วย AI'" onchange="setField('${it.id}','caption', this.value)">${it.caption}</textarea>
+        </div>
+
+        <div class="best-time">💡 เวลาโพสต์แนะนำสำหรับ ${platformLabel(it.platform)}: <b>${BEST_TIMES[it.platform] || '-'}</b></div>
+
+        <div class="cart-box">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:0;">
+            <input type="checkbox" ${it.cart_pinned ? 'checked' : ''} onchange="setCartPinned('${it.id}', this.checked)" style="width:auto;">
+            <span style="color:var(--text); font-size:13px;">🛒 ปักตะกร้าแล้ว</span>
+          </label>
+          <span class="cart-guide-toggle" onclick="toggleGuide('${it.id}')">วิธีปักตะกร้าใน ${platformLabel(it.platform)} (2 นาที) ▾</span>
+          <div class="cart-guide" id="guide-${it.id}" style="display:none;">
+            ${(CART_GUIDES[it.platform] || []).map((step, idx) => `<div>${idx+1}. ${step}</div>`).join('')}
+          </div>
+        </div>
+
+        <div class="row-actions">
+          <button class="btn-primary" onclick="generateCaption('${it.id}')">✎ สร้างแคปชันด้วย AI</button>
+          <button class="btn-ghost" onclick="copyPostSet('${it.id}')">📋 คัดลอกชุดโพสต์ทั้งหมด</button>
+          <button class="btn-ghost" style="background:#1877F2; color:#fff; border-color:#1877F2;" onclick="postToFacebook('${it.id}')" ${!it.video_url ? 'disabled title="ต้องมี video_url จาก Video Generator ก่อน"' : ''}>📘 โพสต์ Facebook อัตโนมัติ</button>
+          <button class="btn-ghost" onclick="markPosted('${it.id}')" ${it.status==='posted'?'disabled':''}>✓ ทำเครื่องหมายว่าโพสต์แล้ว</button>
+          <button class="btn-ghost" onclick="removeItem('${it.id}')">ลบ</button>
+        </div>
+        ${it.fb_post_url ? `<div class="video-result" style="margin-top:8px; font-size:12px; color:var(--mint); background:var(--surface); border:1px dashed var(--border); border-radius:7px; padding:8px 10px;">✅ โพสต์ Facebook แล้ว: <a href="${it.fb_post_url}" target="_blank" style="color:var(--mint);">ดูโพสต์</a></div>` : ''}
+        ${it.fb_error ? `<div style="margin-top:8px; font-size:12px; color:var(--coral); background:var(--surface); border:1px dashed var(--border); border-radius:7px; padding:8px 10px;">❌ ${it.fb_error}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+window.setField = async function(id, field, value){
+  const it = items.find(x=>x.id===id);
+  if(it){
+    it[field] = value;
+    if(field==='affiliate_link'){
+      it.status = value ? (it.status==='posted' ? 'posted' : 'ready') : 'no_link';
+    }
+    await saveItems();
+    render();
+  }
+};
+
+window.removeItem = async function(id){
+  items = items.filter(x=>x.id!==id);
+  await saveItems(); render();
+};
+
+window.markPosted = async function(id){
+  const it = items.find(x=>x.id===id);
+  if(it){ it.status = 'posted'; await saveItems(); render(); }
+};
+
+window.copyPostSet = async function(id){
+  const it = items.find(x=>x.id===id);
+  if(!it) return;
+  const text = `${it.caption || '(ยังไม่มีแคปชัน)'}\n\n🔗 ${it.affiliate_link || '(ยังไม่มีลิงก์ affiliate)'}`;
+  try{
+    await navigator.clipboard.writeText(text);
+    alert('คัดลอกชุดโพสต์แล้ว — ไปวางในแอป ' + platformLabel(it.platform) + ' ได้เลย');
+  }catch(e){
+    prompt('คัดลอกอัตโนมัติไม่สำเร็จ — เลือกข้อความด้านล่างแล้วก็อปเอง:', text);
+  }
+};
+
+window.generateCaption = async function(id){
+  const it = items.find(x=>x.id===id);
+  if(!it) return;
+
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  const btn = card ? card.querySelector('.row-actions .btn-primary') : null;
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ กำลังคิด...'; }
+
+  const prompt_text = `เขียนแคปชันโพสต์ขายของสำหรับ ${platformLabel(it.platform)} ภาษาไทย สั้น กระชับ ดึงดูดให้คนกดตะกร้า/ลิงก์
+สินค้า: ${it.name}
+${it.price ? `ราคา: ${it.price} บาท` : ''}
+${it.script ? `บริบทจากสคริปต์วิดีโอ: ${it.script.slice(0,300)}` : ''}
+
+ให้ตอบเป็น 2 ส่วน:
+1. แคปชัน 2-3 บรรทัด
+2. แฮชแท็กที่เกี่ยวข้อง 5-8 คำ ขึ้นต้นด้วย #
+ตอบเฉพาะเนื้อหา ไม่ต้องมีคำอธิบายเพิ่ม`;
+
+  let cfg = {};
+  try{
+    const res = await window.storage.get(API_KEY_STORAGE);
+    if(res) cfg = JSON.parse(res.value);
+  }catch(e){}
+
+  if(!cfg.claudeApiKey){
+    alert('ยังไม่ได้ใส่ Claude API Key — ไปตั้งค่าด้านบนก่อน (เอาจาก console.anthropic.com)');
+    if(btn){ btn.disabled = false; btn.textContent = '✎ สร้างแคปชันด้วย AI'; }
+    return;
+  }
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": cfg.claudeApiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 400,
+        messages: [{ role: "user", content: prompt_text }]
+      })
+    });
+    if(!response.ok){
+      const errBody = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errBody.slice(0,150)}`);
+    }
+    const data = await response.json();
+    const textBlock = (data.content || []).find(b => b.type === 'text');
+    const caption = textBlock ? textBlock.text.trim() : '';
+    if(!caption) throw new Error('ไม่ได้รับข้อความกลับมา');
+
+    it.caption = caption;
+    await saveItems();
+    render();
+  }catch(e){
+    alert('สร้างแคปชันไม่สำเร็จ: ' + e.message);
+    render();
+  }
+};
+
+document.getElementById('exportPostedBtn').addEventListener('click', async ()=>{
+  const posted = items.filter(it => it.status === 'posted' || it.status === 'ready').map(it => ({
+    name: it.name, platform: it.platform, price: it.price, commission_rate: it.commission_rate
+  }));
+  if(posted.length===0){ alert('ยังไม่มีรายการที่พร้อมโพสต์/โพสต์แล้ว'); return; }
+  const json = JSON.stringify(posted, null, 2);
+  try{
+    await navigator.clipboard.writeText(json);
+    alert(`คัดลอก ${posted.length} รายการเป็น JSON แล้ว — ไปวางในหน้า Revenue Dashboard ได้เลย`);
+  }catch(e){
+    prompt('คัดลอกอัตโนมัติไม่สำเร็จ — เลือกข้อความด้านล่างแล้วก็อปเอง:', json);
+  }
+});
+
+loadFbConfig();
+loadApiConfig();
+loadItems();
+</script>
+
+</body>
+</html>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Affiliate Link Manager — Publish Queue</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
