@@ -269,6 +269,9 @@
       (ถ้าตั้งค่า Supabase Edge Function ไว้ในแผง "ซิงค์จาก Backend" ด้านบน จะใช้ทางนั้นก่อนเพราะเสถียรกว่า proxy ฟรี)
       ส่วน<b style="color:var(--gold);">ค่าคอมมิชชั่นต้องกรอกเองเสมอ</b> เพราะเป็นข้อมูลในระบบ Affiliate ส่วนตัวที่ไม่มีที่ไหนแสดงสาธารณะ
     </div>
+    <div style="color:var(--coral); font-size:12px; margin-bottom:12px;">
+      ⚠️ วิธีนี้มักดึง<b>ราคาไม่สำเร็จ</b>เพราะ Shopee/TikTok render ราคาด้วย JavaScript ล้วนๆ — ถ้าต้องการชื่อ+ราคา+รูป+รายละเอียดแบบแม่นยำ ใช้แผงด้านล่าง "วาง JSON จากสคริปต์ในเครื่อง" แทนจะได้ผลดีกว่ามาก
+    </div>
     <div class="import-row" style="display:flex; gap:10px;">
       <input type="text" id="link_url" placeholder="วางลิงก์สินค้าที่นี่ เช่น https://shopee.co.th/...-i.123.456" style="flex:1;">
       <button type="button" class="btn-primary" id="fetchLinkBtn" style="white-space:nowrap;">↓ ดึงข้อมูล</button>
@@ -278,6 +281,28 @@
       <span id="rawDebugToggle" style="cursor:pointer; color:var(--muted); font-size:11px; text-decoration:underline;">ดูเนื้อหาดิบที่ดึงมาได้ (สำหรับ debug)</span>
       <textarea id="rawDebugText" readonly style="display:none; margin-top:8px; height:200px; font-family:'IBM Plex Mono',monospace; font-size:11px;"></textarea>
     </div>
+  </div>
+
+  <div class="panel">
+    <h2>วาง JSON จากสคริปต์ในเครื่อง <span class="tag" style="color:var(--mint); border-color:var(--mint);">แม่นยำกว่า — แนะนำ</span></h2>
+    <div style="color:var(--muted); font-size:12px; margin-bottom:12px;">
+      รันสคริปต์ <code style="background:var(--surface-2); padding:1px 6px; border-radius:4px; color:var(--gold);">fetch-product-detail.js</code> บนเครื่อง Mac (ใช้ Playwright เปิดเบราว์เซอร์จริง ได้ทั้งชื่อ ราคา รูปภาพ และรายละเอียดสินค้าครบ)
+      แล้ววาง JSON ที่ได้ตรงนี้ — ระบบจะเติมข้อมูลให้อัตโนมัติ (ยังต้องกรอกค่าคอมมิชชั่น/คะแนนกระแสเองเหมือนเดิม)
+    </div>
+    <div class="import-row" style="display:flex; gap:10px;">
+      <textarea id="scriptJsonInput" placeholder='วาง JSON ที่สคริปต์พิมพ์ออกมา เช่น {"name": "...", "price": 199, "image": "...", "description": "..."}' style="flex:1; height:80px;"></textarea>
+      <button type="button" class="btn-primary" id="importScriptJsonBtn" style="white-space:nowrap; align-self:flex-start;">+ เพิ่มสินค้านี้</button>
+    </div>
+    <div style="margin-top:10px;">
+      <label>แพลตฟอร์มของลิงก์นี้</label>
+      <select id="scriptJsonPlatform" style="max-width:220px;">
+        <option value="tiktok">TikTok Shop</option>
+        <option value="shopee" selected>Shopee</option>
+        <option value="lazada">Lazada</option>
+        <option value="facebook">Facebook</option>
+      </select>
+    </div>
+    <div id="scriptJsonStatus" style="font-size:12px; color:var(--muted); margin-top:10px;"></div>
   </div>
 
   <div class="panel">
@@ -307,6 +332,21 @@
       <div>
         <label>คะแนนกระแส (0-100)</label>
         <input type="number" id="f_trend" placeholder="80" min="0" max="100" required>
+      </div>
+      <div class="full">
+        <label>รูปสินค้า</label>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="flex:1;">
+            <input type="text" id="f_image_url" placeholder="วางลิงก์รูปภาพที่นี่ (คลิกขวารูปสินค้า → Copy Image Address)">
+            <div style="color:var(--muted); font-size:11px; margin-top:6px;">หรือ</div>
+            <input type="file" id="f_image_file" accept="image/*" style="margin-top:6px;">
+          </div>
+          <img id="imagePreview" style="display:none; width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+        </div>
+      </div>
+      <div class="full">
+        <label>รายละเอียดสินค้า (ไม่บังคับ — ช่วยให้ AI เขียนสคริปต์ได้ดีขึ้น)</label>
+        <textarea id="f_description" placeholder="เช่น จุดเด่นของสินค้า, ส่วนผสม, วิธีใช้ ฯลฯ" style="width:100%; min-height:60px; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:8px 10px; font-size:13px; font-family:'Sora',sans-serif;"></textarea>
       </div>
       <div class="full">
         <label>หมวดหมู่</label>
@@ -433,7 +473,14 @@ function renderTable(){
   const rows = list.map(p => `
     <tr>
       <td><span class="platform-badge p-${p.platform}">${platformLabel(p.platform)}</span></td>
-      <td>${p.name}${p.category ? `<div style="color:var(--muted); font-size:11px; margin-top:2px;">${p.category}</div>` : ''}</td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${p.image_url ? `<img src="${p.image_url}" alt="" style="width:32px; height:32px; object-fit:cover; border-radius:5px; flex-shrink:0;">` : ''}
+          <div>
+            ${p.name}${p.category ? `<div style="color:var(--muted); font-size:11px; margin-top:2px;">${p.category}</div>` : ''}
+          </div>
+        </div>
+      </td>
       <td class="mono">฿${Number(p.price).toLocaleString()}</td>
       <td class="mono">${p.commission_rate}%</td>
       <td>
@@ -498,7 +545,8 @@ window.removeProduct = async function(id){
 document.getElementById('exportBtn').addEventListener('click', async ()=>{
   const approved = products.filter(p=>p.status==='approved').map(p=>({
     platform: p.platform, name: p.name, price: p.price,
-    commission_rate: p.commission_rate, trend_score: p.trend_score, category: p.category
+    commission_rate: p.commission_rate, trend_score: p.trend_score, category: p.category,
+    image_url: p.image_url || null, description: p.description || null
   }));
   if(approved.length===0){
     alert('ยังไม่มีสินค้าที่อนุมัติ — กด "อนุมัติ" ที่รายการก่อน แล้วค่อยส่งออก');
@@ -522,6 +570,59 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   renderTable();
 });
 
+let uploadedImageDataUrl = null;
+
+function resizeImageFile(file, maxWidth = 400, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('f_image_file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    uploadedImageDataUrl = await resizeImageFile(file);
+    const preview = document.getElementById('imagePreview');
+    preview.src = uploadedImageDataUrl;
+    preview.style.display = 'block';
+    document.getElementById('f_image_url').value = ''; // ใช้ไฟล์ที่อัปโหลดแทน ถ้ามีทั้งคู่
+  } catch (err) {
+    alert('อ่านไฟล์รูปไม่สำเร็จ: ' + err.message);
+  }
+});
+
+document.getElementById('f_image_url').addEventListener('input', (e) => {
+  const url = e.target.value.trim();
+  const preview = document.getElementById('imagePreview');
+  if (url) {
+    uploadedImageDataUrl = null; // ใช้ URL แทนไฟล์ที่เคยอัปโหลด
+    preview.src = url;
+    preview.style.display = 'block';
+    preview.onerror = () => { preview.style.display = 'none'; };
+  } else if (!uploadedImageDataUrl) {
+    preview.style.display = 'none';
+  }
+});
+
+let pendingProductExtra = null;
+
 document.getElementById('addForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const newProduct = {
@@ -532,12 +633,21 @@ document.getElementById('addForm').addEventListener('submit', async (e)=>{
     commission_rate: document.getElementById('f_commission').value,
     trend_score: document.getElementById('f_trend').value,
     category: document.getElementById('f_category').value.trim(),
+    image_url: uploadedImageDataUrl || document.getElementById('f_image_url').value.trim() || null,
+    description: document.getElementById('f_description').value.trim() || null,
     status: 'scanned',
     addedAt: new Date().toISOString()
   };
+  if(pendingProductExtra){
+    if(!newProduct.image_url) newProduct.image_url = pendingProductExtra.image_url;
+    if(!newProduct.description) newProduct.description = pendingProductExtra.description;
+    pendingProductExtra = null;
+  }
   products.unshift(newProduct);
   await saveProducts();
   e.target.reset();
+  uploadedImageDataUrl = null;
+  document.getElementById('imagePreview').style.display = 'none';
   render();
 });
 
@@ -737,6 +847,46 @@ function extractFromMarkdownText(text){
 
   return { name, price };
 }
+
+document.getElementById('importScriptJsonBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('scriptJsonInput').value.trim();
+  const statusEl = document.getElementById('scriptJsonStatus');
+  const platform = document.getElementById('scriptJsonPlatform').value;
+
+  if(!raw){
+    statusEl.textContent = '⚠️ วาง JSON ก่อน';
+    statusEl.style.color = 'var(--coral)';
+    return;
+  }
+
+  try{
+    const data = JSON.parse(raw);
+
+    document.getElementById('f_platform').value = platform;
+    if(data.name) document.getElementById('f_name').value = data.name;
+    if(data.price) document.getElementById('f_price').value = data.price;
+    if(data.description) document.getElementById('f_description').value = data.description;
+    if(data.image){
+      document.getElementById('f_image_url').value = data.image;
+      const preview = document.getElementById('imagePreview');
+      preview.src = data.image;
+      preview.style.display = 'block';
+      preview.onerror = () => { preview.style.display = 'none'; };
+    }
+
+    let msg = `✅ นำเข้าสำเร็จ: ${data.name || '(ไม่มีชื่อ)'}`;
+    if(data.price) msg += ` — ฿${data.price}`;
+    if(data.image) msg += ` — มีรูปภาพด้วย`;
+    msg += ` (กรอกค่าคอมมิชชั่น/คะแนนกระแสด้านล่าง แล้วกด "เพิ่มเข้ารายการสแกน")`;
+    statusEl.textContent = msg;
+    statusEl.style.color = 'var(--mint)';
+
+    document.getElementById('scriptJsonInput').value = '';
+  }catch(e){
+    statusEl.textContent = `❌ อ่าน JSON ไม่สำเร็จ: ${e.message}`;
+    statusEl.style.color = 'var(--coral)';
+  }
+});
 
 document.getElementById('rawDebugToggle').addEventListener('click', ()=>{
   const el = document.getElementById('rawDebugText');
